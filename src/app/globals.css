@@ -18,12 +18,24 @@ body {
   overflow-x: hidden;
 }
 
-h1, h2, h3, h4, .font-serif {
+h1,
+h2,
+h3,
+h4,
+.font-serif {
   font-family: var(--font-playfair), serif;
 }
 
-/* Hide scrollbar for seamless experience */
+/* Standard scrollbar for better visibility */
 ::-webkit-scrollbar {
-  width: 0px;
-  background: transparent;
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C39D63;
+  border-radius: 4px;
 }

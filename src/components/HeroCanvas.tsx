@@ -32,13 +32,17 @@ export default function HeroCanvas() {
                 const paddedIndex = i.toString().padStart(3, "0");
                 img.src = `/sequence/ezgif-frame-${paddedIndex}.png`;
 
-                // For the very first frame, wait for it to load before revealing the canvas
                 if (i === 1) {
-                    img.onload = () => setImagesLoaded(true);
+                    img.onload = () => {
+                        // Ensure images array is set before revealing canvas
+                        setImages(loadedImages);
+                        setImagesLoaded(true);
+                    };
                 }
 
                 loadedImages.push(img);
             }
+            // Final update to ensure state is synced with the full array
             setImages(loadedImages);
         };
 

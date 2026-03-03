@@ -1,18 +1,8 @@
-import dynamic from "next/dynamic";
 import HeroCanvas from "@/components/HeroCanvas";
-
-const AboutSection = dynamic(() => import("@/components/AboutSection"), {
-    loading: () => <div className="h-96 bg-black" />,
-});
-const FeaturesSection = dynamic(() => import("@/components/FeaturesSection"), {
-    loading: () => <div className="h-96 bg-black" />,
-});
-const ContactSection = dynamic(() => import("@/components/ContactSection"), {
-    loading: () => <div className="h-96 bg-black" />,
-});
-const Footer = dynamic(() => import("@/components/Footer"), {
-    loading: () => <div className="h-64 bg-black" />,
-});
+import AboutSection from "@/components/AboutSection";
+import FeaturesSection from "@/components/FeaturesSection";
+import ContactSection from "@/components/ContactSection";
+import Footer from "@/components/Footer";
 
 export default function Home() {
     return (
