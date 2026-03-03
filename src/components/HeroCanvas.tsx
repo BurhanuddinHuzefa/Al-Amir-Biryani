@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useScroll, useTransform, motion } from "framer-motion";
 import Image from "next/image";
 
-const FRAME_COUNT = 273;
+const FRAME_COUNT = 262;
 
 export default function HeroCanvas() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -32,7 +32,7 @@ export default function HeroCanvas() {
                 if (tempImages[i - 1]) return; // Already loading/loaded
                 const img = new window.Image();
                 const paddedIndex = i.toString().padStart(3, "0");
-                img.src = `/sequence/ezgif-frame-${paddedIndex}.png`;
+                img.src = `/sequence/ezgif-frame-${paddedIndex}.jpg`;
                 img.onload = () => {
                     setImages((prev) => {
                         const newImages = [...prev];
@@ -119,7 +119,7 @@ export default function HeroCanvas() {
                 {/* Instant Background Frame */}
                 <div className={`absolute inset-0 z-0 transition-opacity duration-1000 ${imagesLoaded ? 'opacity-0' : 'opacity-100'}`}>
                     <Image
-                        src="/sequence/ezgif-frame-001.png"
+                        src="/sequence/ezgif-frame-001.jpg"
                         alt="Biryani Hero"
                         fill
                         className="object-cover"
@@ -136,7 +136,7 @@ export default function HeroCanvas() {
 
                 <motion.div
                     style={{ opacity: overlayOpacity }}
-                    className="relative z-20 flex flex-col items-center text-center space-y-6 px-4"
+                    className="relative z-20 flex flex-col items-center text-center space-y-6 px-4 -mt-16 md:-mt-24"
                 >
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
@@ -174,7 +174,7 @@ export default function HeroCanvas() {
 
                 <motion.div
                     style={{ opacity: overlayOpacity }}
-                    className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
+                    className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
                 >
                     <span className="text-white/70 text-sm tracking-widest uppercase font-light">Scroll to Explore</span>
                     <div className="w-[1px] h-16 bg-white/20 overflow-hidden relative">
