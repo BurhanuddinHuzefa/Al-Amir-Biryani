@@ -18,32 +18,47 @@ export default function HeroCanvas() {
         offset: ["start start", "end end"],
     });
 
-    // Map scroll progress (0 to 1) to frame index (1 to 273)
-    const frameIndex = useTransform(scrollYProgress, [0, 1], [1, FRAME_COUNT]);
+    // Map scroll progress (0 to 1) to frame index (0 to 272)
+    const frameIndex = useTransform(scrollYProgress, [0, 1], [0, FRAME_COUNT - 1]);
 
     useEffect(() => {
-        // Preload images with streaming priority
+        // High-Performance Keyframe Loading Strategy (Prevents 142MB bottleneck)
         const loadImages = async () => {
-            const loadedImages: HTMLImageElement[] = [];
+            const tempImages: HTMLImageElement[] = [];
+            const keyframeInterval = 15; // Load every 15th frame first for ultra-fast rough animation
 
-            // Initiating loading for all 273 frames
-            for (let i = 1; i <= FRAME_COUNT; i++) {
+            // Function to load a specific frame
+            const loadFrame = (i: number, isPriority = false) => {
+                if (tempImages[i - 1]) return; // Already loading/loaded
                 const img = new window.Image();
                 const paddedIndex = i.toString().padStart(3, "0");
                 img.src = `/sequence/ezgif-frame-${paddedIndex}.png`;
+                img.onload = () => {
+                    setImages((prev) => {
+                        const newImages = [...prev];
+                        newImages[i - 1] = img;
+                        return newImages;
+                    });
+                    if (i === 1) setImagesLoaded(true);
+                };
+                tempImages[i - 1] = img;
+            };
 
-                if (i === 1) {
-                    img.onload = () => {
-                        // Ensure images array is set before revealing canvas
-                        setImages(loadedImages);
-                        setImagesLoaded(true);
-                    };
-                }
+            // 1. Priority: Load Frame 1 immediately
+            loadFrame(1, true);
 
-                loadedImages.push(img);
+            // 2. Keyframes: Load every 15th frame to get the movement started
+            for (let i = 1; i <= FRAME_COUNT; i += keyframeInterval) {
+                loadFrame(i);
             }
-            // Final update to ensure state is synced with the full array
-            setImages(loadedImages);
+
+            // 3. Background: Fill all other frames incrementally
+            // We use a small delay or just let them fire to avoid blocking the main thread
+            setTimeout(() => {
+                for (let i = 1; i <= FRAME_COUNT; i++) {
+                    loadFrame(i);
+                }
+            }, 100);
         };
 
         loadImages();
@@ -56,11 +71,6 @@ export default function HeroCanvas() {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        // Set canvas dimensions based on the first image aspect ratio, then scale to screen
-        const firstImg = images[0];
-        const aspectRatio = firstImg.width / firstImg.height;
-
-        // We update canvas internal resolution to match screen size to keep it sharp
         const resizeCanvas = () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -70,12 +80,11 @@ export default function HeroCanvas() {
         const renderFrame = (index: number) => {
             const currentFrame = Math.min(
                 FRAME_COUNT - 1,
-                Math.max(0, Math.floor(index) - 1)
+                Math.max(0, Math.floor(index))
             );
             const img = images[currentFrame];
-            if (!img) return;
+            if (!img || !img.complete) return;
 
-            // Calculate scale to "cover" the canvas while keeping aspect ratio
             const scale = Math.max(
                 canvas.width / img.width,
                 canvas.height / img.height
@@ -89,13 +98,10 @@ export default function HeroCanvas() {
             ctx.drawImage(img, x, y, width, height);
         };
 
-        // Initial render
         resizeCanvas();
         window.addEventListener("resize", resizeCanvas);
 
-        // Subscribe to framer-motion scroll updates
         const unsubscribe = frameIndex.on("change", (latest) => {
-            // Use requestAnimationFrame for smoother rendering
             requestAnimationFrame(() => renderFrame(latest));
         });
 
@@ -105,15 +111,13 @@ export default function HeroCanvas() {
         };
     }, [imagesLoaded, images, frameIndex]);
 
-    // Overlay opacity decreases as user scrolls down
     const overlayOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0]);
 
     return (
         <div ref={containerRef} className="h-[400vh] w-full relative bg-black">
-            {/* Sticky container holds the canvas and text overlay */}
             <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
-                {/* Instant First Frame Placeholder - Optimized for LCP */}
-                <div className={`absolute inset-0 z-0 transition-opacity duration-1000 ${imagesLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                {/* Instant Background Frame */}
+                <div className={`absolute inset-0 z-0 transition-opacity duration-1000 ${imagesLoaded ? 'opacity-0' : 'opacity-100'}`}>
                     <Image
                         src="/sequence/ezgif-frame-001.png"
                         alt="Biryani Hero"
@@ -123,16 +127,13 @@ export default function HeroCanvas() {
                     />
                 </div>
 
-                {/* Canvas background */}
                 <canvas
                     ref={canvasRef}
                     className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-1000 ${imagesLoaded ? 'opacity-100' : 'opacity-0'}`}
                 />
 
-                {/* Cinematic gradient overlay for text legibility */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/80 z-10" />
 
-                {/* Text Overlay */}
                 <motion.div
                     style={{ opacity: overlayOpacity }}
                     className="relative z-20 flex flex-col items-center text-center space-y-6 px-4"
@@ -145,9 +146,9 @@ export default function HeroCanvas() {
                         <Image
                             src="/logo.png"
                             alt="Al Amir Logo"
-                            width={200}
-                            height={200}
-                            className="mb-8 drop-shadow-2xl rounded-full object-cover"
+                            width={180}
+                            height={180}
+                            className="mb-8 drop-shadow-2xl rounded-full object-cover border-4 border-primary/20"
                             priority
                         />
                     </motion.div>
@@ -156,7 +157,7 @@ export default function HeroCanvas() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: imagesLoaded ? 1 : 0, y: imagesLoaded ? 0 : 20 }}
                         transition={{ duration: 1.2, delay: 0.5, ease: "easeOut" }}
-                        className="text-5xl md:text-7xl font-bold tracking-widest uppercase text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+                        className="text-5xl md:text-8xl font-bold tracking-widest uppercase text-white drop-shadow-2xl"
                     >
                         Al Amir Biryani
                     </motion.h1>
@@ -165,13 +166,12 @@ export default function HeroCanvas() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: imagesLoaded ? 1 : 0 }}
                         transition={{ duration: 1, delay: 1 }}
-                        className="text-primary text-xl md:text-2xl font-light tracking-wide italic max-w-xl mx-auto drop-shadow-md"
+                        className="text-primary text-xl md:text-3xl font-light tracking-[0.2em] italic max-w-2xl mx-auto"
                     >
-                        The Most Authentic & Premium Experience
+                        Authentic Flavors, Premium Legacy
                     </motion.p>
                 </motion.div>
 
-                {/* Scroll Indicator */}
                 <motion.div
                     style={{ opacity: overlayOpacity }}
                     className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"

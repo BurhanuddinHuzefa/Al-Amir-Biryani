@@ -22,6 +22,7 @@ export default function AboutSection() {
                             alt="Al Amir Biryani - Our Story"
                             fill
                             className="object-contain p-12 drop-shadow-2xl opacity-90"
+                            priority
                         />
                     </motion.div>
 
