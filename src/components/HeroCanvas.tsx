@@ -22,21 +22,21 @@ export default function HeroCanvas() {
     const frameIndex = useTransform(scrollYProgress, [0, 1], [1, FRAME_COUNT]);
 
     useEffect(() => {
-        // Preload images
+        // Preload images with streaming priority
         const loadImages = async () => {
             const loadedImages: HTMLImageElement[] = [];
-            let loadedCount = 0;
 
+            // Initiating loading for all 273 frames
             for (let i = 1; i <= FRAME_COUNT; i++) {
                 const img = new window.Image();
                 const paddedIndex = i.toString().padStart(3, "0");
                 img.src = `/sequence/ezgif-frame-${paddedIndex}.png`;
-                img.onload = () => {
-                    loadedCount++;
-                    if (loadedCount === FRAME_COUNT) {
-                        setImagesLoaded(true);
-                    }
-                };
+
+                // For the very first frame, wait for it to load before revealing the canvas
+                if (i === 1) {
+                    img.onload = () => setImagesLoaded(true);
+                }
+
                 loadedImages.push(img);
             }
             setImages(loadedImages);
@@ -108,16 +108,21 @@ export default function HeroCanvas() {
         <div ref={containerRef} className="h-[400vh] w-full relative bg-black">
             {/* Sticky container holds the canvas and text overlay */}
             <div className="sticky top-0 h-screen w-full overflow-hidden flex items-center justify-center">
-                {!imagesLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black z-50">
-                        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                )}
+                {/* Instant First Frame Placeholder - Optimized for LCP */}
+                <div className={`absolute inset-0 z-0 transition-opacity duration-1000 ${imagesLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                    <Image
+                        src="/sequence/ezgif-frame-001.png"
+                        alt="Biryani Hero"
+                        fill
+                        className="object-cover"
+                        priority
+                    />
+                </div>
 
                 {/* Canvas background */}
                 <canvas
                     ref={canvasRef}
-                    className="absolute inset-0 w-full h-full object-cover z-0"
+                    className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-1000 ${imagesLoaded ? 'opacity-100' : 'opacity-0'}`}
                 />
 
                 {/* Cinematic gradient overlay for text legibility */}
